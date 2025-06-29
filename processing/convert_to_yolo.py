@@ -19,6 +19,8 @@ import argparse
 from typing import Dict, List, Tuple, Optional
 import json
 from collections import defaultdict
+import time
+import sys
 
 
 class ChicagoFSWildYOLOConverter:
@@ -57,6 +59,52 @@ class ChicagoFSWildYOLOConverter:
             "dev_sequences": 0,
             "test_sequences": 0
         }
+        
+        # Progress tracking
+        self.start_time = None
+        self.processed_sequences = 0
+    
+    def print_progress_bar(self, current: int, total: int, prefix: str = "Progress", 
+                          suffix: str = "Complete", bar_length: int = 50):
+        """Print a progress bar to the console."""
+        if total == 0:
+            return
+            
+        percent = (current / total) * 100
+        filled_length = int(bar_length * current // total)
+        bar = '█' * filled_length + '-' * (bar_length - filled_length)
+        
+        # Calculate elapsed time and ETA
+        if self.start_time:
+            elapsed = time.time() - self.start_time
+            if current > 0:
+                eta = (elapsed / current) * (total - current)
+                eta_str = f"ETA: {self.format_time(eta)}"
+            else:
+                eta_str = "ETA: --:--"
+            time_str = f"Elapsed: {self.format_time(elapsed)}, {eta_str}"
+        else:
+            time_str = ""
+        
+        # Print progress bar
+        sys.stdout.write(f'\r{prefix} |{bar}| {current}/{total} ({percent:.1f}%) {suffix} {time_str}')
+        sys.stdout.flush()
+        
+        if current == total:
+            print()  # New line when complete
+    
+    def format_time(self, seconds: float) -> str:
+        """Format seconds into readable time string."""
+        if seconds < 60:
+            return f"{seconds:.1f}s"
+        elif seconds < 3600:
+            minutes = int(seconds // 60)
+            secs = int(seconds % 60)
+            return f"{minutes}m {secs}s"
+        else:
+            hours = int(seconds // 3600)
+            minutes = int((seconds % 3600) // 60)
+            return f"{hours}h {minutes}m"
     
     def setup_output_structure(self):
         """Create YOLO dataset directory structure."""
@@ -194,15 +242,18 @@ class ChicagoFSWildYOLOConverter:
         source_frames_dir = self.frames_dir / sequence_name
         
         if not source_frames_dir.exists():
-            print(f"Warning: Frames directory not found for {sequence_name}")
+            print(f"\nWarning: Frames directory not found for {sequence_name}")
             return 0
         
         # Get bounding box annotations for this sequence
         frame_annotations = self.process_sequence_annotations(sequence_name, img_width, img_height)
         
+        # Get list of frame files
+        frame_files = list(source_frames_dir.glob("*.jpg"))
+        
         # Process each frame
         frames_processed = 0
-        for frame_file in source_frames_dir.glob("*.jpg"):
+        for frame_file in frame_files:
             frame_num = frame_file.stem
             
             # Create unique filename to avoid conflicts
@@ -234,7 +285,7 @@ class ChicagoFSWildYOLOConverter:
     def create_dataset_yaml(self):
         """Create YOLO dataset configuration file."""
         dataset_config = {
-            'path': str(self.output_path.absolute()),
+            'path': './',  # Use relative path for portability
             'train': 'train/images',
             'val': 'val/images', 
             'test': 'test/images',
@@ -277,11 +328,14 @@ class ChicagoFSWildYOLOConverter:
     def convert(self):
         """Main conversion process."""
         print("Starting ChicagoFSWild to YOLO conversion...")
+        self.start_time = time.time()
         
         # Setup output structure
+        print("Setting up output directory structure...")
         self.setup_output_structure()
         
         # Load datasets
+        print("Loading dataset CSV files...")
         main_df, hand_df = self.load_datasets()
         
         # Update statistics
@@ -291,17 +345,21 @@ class ChicagoFSWildYOLOConverter:
         # Create set of sequences with bounding box annotations
         sequences_with_bbox = set(hand_df['filename'].values)
         
+        # Filter to only sequences with bounding boxes for processing
+        sequences_to_process = main_df[main_df['filename'].isin(sequences_with_bbox)]
+        total_sequences_to_process = len(sequences_to_process)
+        
+        print(f"\nProcessing {total_sequences_to_process} sequences with bounding box annotations...")
+        print(f"Total sequences in dataset: {len(main_df)}")
+        print(f"Sequences with annotations: {total_sequences_to_process}")
+        print()
+        
         # Process sequences by partition
         partition_mapping = {'train': 'train', 'dev': 'val', 'test': 'test'}
         
-        for _, row in main_df.iterrows():
+        for idx, (_, row) in enumerate(sequences_to_process.iterrows()):
             sequence_name = row['filename']
             partition = row['partition']
-            
-            # Skip sequences without bounding box annotations for now
-            # (you can modify this to include all sequences if needed)
-            if sequence_name not in sequences_with_bbox:
-                continue
             
             # Map partition to YOLO split
             split = partition_mapping.get(partition, 'train')
@@ -312,9 +370,17 @@ class ChicagoFSWildYOLOConverter:
             if frames_processed > 0:
                 self.stats["total_frames"] += frames_processed
                 self.stats[f"{partition}_sequences"] += 1
-                print(f"Processed {sequence_name}: {frames_processed} frames -> {split}")
+            
+            # Update progress
+            self.processed_sequences = idx + 1
+            self.print_progress_bar(
+                current=self.processed_sequences,
+                total=total_sequences_to_process,
+                prefix="Converting",
+                suffix=f"| {sequence_name} ({frames_processed} frames) -> {split}"
+            )
         
-        # Create configuration files
+        print("\nCreating configuration files...")
         self.create_dataset_yaml()
         self.create_metadata_files(main_df, hand_df)
         
@@ -323,19 +389,29 @@ class ChicagoFSWildYOLOConverter:
     
     def print_statistics(self):
         """Print conversion statistics."""
-        print("\n" + "="*50)
+        total_time = time.time() - self.start_time if self.start_time else 0
+        
+        print("\n" + "="*60)
         print("CONVERSION STATISTICS")
-        print("="*50)
+        print("="*60)
+        print(f"Total processing time: {self.format_time(total_time)}")
         print(f"Total sequences in dataset: {self.stats['total_sequences']}")
         print(f"Sequences with bounding boxes: {self.stats['sequences_with_bbox']}")
         print(f"Total frames processed: {self.stats['total_frames']}")
         print(f"Frames with annotations: {self.stats['frames_with_annotations']}")
+        
+        # Processing rates
+        if total_time > 0:
+            seq_rate = self.processed_sequences / total_time
+            frame_rate = self.stats['total_frames'] / total_time
+            print(f"Processing rate: {seq_rate:.2f} sequences/sec, {frame_rate:.2f} frames/sec")
+        
         print("\nSplit distribution:")
         print(f"  Train sequences: {self.stats['train_sequences']}")
         print(f"  Dev/Val sequences: {self.stats['dev_sequences']}")
         print(f"  Test sequences: {self.stats['test_sequences']}")
         print(f"\nOutput directory: {self.output_path}")
-        print("="*50)
+        print("="*60)
 
 
 def main():
