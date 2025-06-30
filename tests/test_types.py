@@ -3,6 +3,7 @@ Tests for data types and utilities.
 """
 
 import pytest
+
 from src.utils.types import (
     TemporalSegment, 
     DetectionTarget, 
