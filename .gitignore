@@ -1,2 +1,16 @@
 dataset/ChicagoFSWild
 data
+test_processed_data
+__pycache__
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+.pytest_cache/
+.mypy_cache/
+*.log
+checkpoints/
+wandb/
+.DS_Store
+Thumbs.db

@@ -1,0 +1,35 @@
+# Configuration for training fingerspelling detection model
+
+# Data configuration
+data:
+  dataset_root: "dataset/ChicagoFSWild"
+  output_root: "processed_data"
+  image_size: [108, 108]  # Height, Width
+
+# Model configuration
+model:
+  backbone: "yolov8n.pt"
+  use_pose: true
+  freeze_backbone: false
+
+# Training configuration
+training:
+  batch_size: 4
+  num_epochs: 50
+  learning_rate: 0.0001
+  num_workers: 0
+  save_dir: "checkpoints"
+  save_every: 5
+  early_stopping_patience: 10
+  
+  # Loss weights
+  loss_weights:
+    detection_weight: 1.0
+    recognition_weight: 1.0
+    ler_weight: 0.1
+    pose_weight: 0.5
+
+# Evaluation configuration
+evaluation:
+  iou_thresholds: [0.1, 0.3, 0.5]
+  acc_thresholds: [0.0, 0.2, 0.4]

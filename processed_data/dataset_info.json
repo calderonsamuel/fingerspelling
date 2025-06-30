@@ -1,0 +1,10 @@
+{
+  "dataset_root": "dataset\\ChicagoFSWild",
+  "output_root": "processed_data",
+  "chunk_size": 300,
+  "chunk_overlap": 75,
+  "partitions": {
+    "train": 8,
+    "dev": 2
+  }
+}
