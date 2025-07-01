@@ -4,7 +4,7 @@
   "chunk_size": 300,
   "chunk_overlap": 75,
   "partitions": {
-    "train": 8,
-    "dev": 2
+    "train": 80,
+    "dev": 20
   }
 }

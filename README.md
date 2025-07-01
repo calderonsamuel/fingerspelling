@@ -82,6 +82,29 @@ python train.py --epochs 50
 python train.py --config configs/custom_config.yaml --subset-size 100 --epochs 25
 ```
 
+### Inference
+
+**Test on processed frames:**
+```bash
+python inference.py --frames dataset/ChicagoFSWild/ChicagoFSWild-Frames/aslized/elsie_stecker_0100 --output prediction.json
+```
+
+**Live webcam inference:**
+```bash
+python live_inference.py --mode webcam --camera 0
+```
+
+**Video file inference:**
+```bash
+python live_inference.py --mode video --video path/to/your/video.mp4
+```
+
+**Live inference options:**
+- Press `'q'` to quit
+- Press `'s'` to save current predictions
+- Adjust `--window-size` for processing (default: 30 frames)
+- Use `--camera ID` to select different camera
+
 ### Configuration
 
 Edit `configs/train_config.yaml` to customize:

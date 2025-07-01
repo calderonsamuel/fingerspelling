@@ -1,0 +1,18 @@
+{
+  "segments": [
+    [
+      0,
+      23,
+      0.6881332397460938
+    ]
+  ],
+  "letter_sequences": [
+    "<blank>"
+  ],
+  "confidence_scores": [],
+  "frame_directory": "dataset/ChicagoFSWild/ChicagoFSWild-Frames/aslized/elsie_stecker_0100",
+  "num_frames": 24,
+  "frame_rate": 30,
+  "ground_truth": "it",
+  "sequence_name": "aslized/elsie_stecker_0100"
+}
