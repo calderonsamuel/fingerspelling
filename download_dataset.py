@@ -250,7 +250,11 @@ def main():
     frames_tar = dataset_dir / "ChicagoFSWild-Frames.tgz"
     if frames_tar.exists():
         print(f"📦 Found ChicagoFSWild-Frames.tgz, extracting...")
-        if not extract_tar_gz(str(frames_tar), str(dataset_dir)):
+        # Create the ChicagoFSWild-Frames directory
+        frames_extract_dir = dataset_dir / "ChicagoFSWild-Frames"
+        frames_extract_dir.mkdir(exist_ok=True)
+        
+        if not extract_tar_gz(str(frames_tar), str(frames_extract_dir)):
             print("⚠️  Failed to extract frames, but continuing...")
         else:
             # Remove the .tgz file after extraction to save space

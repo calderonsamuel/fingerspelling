@@ -45,17 +45,47 @@ configs/               # Configuration files
 ### Prerequisites
 - Python 3.8+
 - PyTorch 2.0+
-- ChicagoFSWild dataset (place in `dataset/ChicagoFSWild/`)
+- ~2GB free disk space for ChicagoFSWild dataset
 
 ### Installation
+
+1. **Create virtual environment:**
 ```bash
-# Create virtual environment
 python -m venv .venv
 source .venv/bin/activate  # On Windows: .venv\Scripts\activate
-
-# Install dependencies
-pip install torch torchvision ultralytics opencv-python numpy pandas scikit-learn matplotlib seaborn pillow tqdm pytest black mypy typing-extensions editdistance PyYAML
 ```
+
+2. **Install dependencies:**
+```bash
+pip install -r requirements.txt
+```
+
+Or manually:
+```bash
+pip install torch torchvision ultralytics opencv-python numpy pandas scikit-learn matplotlib seaborn pillow tqdm pytest black mypy typing-extensions editdistance PyYAML gdown
+```
+
+3. **Download ChicagoFSWild dataset:**
+```bash
+python download_dataset.py
+```
+
+**Download options:**
+- `--dataset-dir`: Custom extraction directory (default: `dataset/ChicagoFSWild`)
+- `--skip-download`: Skip download if file already exists
+- `--clean`: Clean existing dataset directory before extraction
+
+**Manual download (if automatic fails):**
+1. Download from: https://drive.google.com/file/d/1-MUy26WStlNjSEDFHN1pkP2MqD5OApFY/view?usp=sharing
+2. Save as `downloads/ChicagoFSWild.tgz`
+3. Run: `python download_dataset.py --skip-download`
+
+The download script will:
+- Download ChicagoFSWild.tgz (~1.8GB) from Google Drive
+- Extract the main dataset with annotations and metadata
+- Extract ChicagoFSWild-Frames.tgz containing all video frames
+- Verify the complete dataset structure
+- Display dataset statistics
 
 ## Usage
 
@@ -171,3 +201,55 @@ black src/ tests/
 ```
 
 This project follows test-driven development practices with comprehensive validation on real data.
+
+## Dataset Download
+
+### Automatic Download
+The easiest way to get the dataset:
+```bash
+python download_dataset.py
+```
+
+### Manual Download
+If automatic download fails:
+1. Go to: https://drive.google.com/file/d/1-MUy26WStlNjSEDFHN1pkP2MqD5OApFY/view?usp=sharing
+2. Download `ChicagoFSWild.tgz` to `downloads/` folder
+3. Run: `python download_dataset.py --skip-download`
+
+### Troubleshooting Download Issues
+
+**"gdown" not found:**
+```bash
+pip install gdown
+```
+
+**Google Drive download limit:**
+- Try again later (Google has daily download limits)
+- Use manual download method above
+
+**Extraction errors:**
+```bash
+# Clean and retry
+python download_dataset.py --clean
+```
+
+**Verification of dataset:**
+After download, you should have:
+```
+dataset/ChicagoFSWild/
+├── ChicagoFSWild.csv          # 7,306 sequences
+├── ChicagoFSWild-Frames/      # Video frames (~16 subdirs)
+├── BBox/                      # Bounding box annotations
+├── README                     # Dataset documentation
+└── *.csv                      # Various metadata files
+```
+
+Check the dataset with:
+```bash
+python -c "
+import pandas as pd
+df = pd.read_csv('dataset/ChicagoFSWild/ChicagoFSWild.csv')
+print(f'Dataset loaded: {len(df)} sequences')
+print(f'Partitions: {df[\"partition\"].value_counts().to_dict()}')
+"
+```
