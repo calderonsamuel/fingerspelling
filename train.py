@@ -2,6 +2,10 @@
 Main training script for fingerspelling detection and recognition.
 """
 
+import sys
+from pathlib import Path
+sys.path.append(str(Path(__file__).parent.resolve()))
+
 import torch
 from pathlib import Path
 import argparse
