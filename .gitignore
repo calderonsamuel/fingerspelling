@@ -1,5 +1,4 @@
 dataset/ChicagoFSWild
-data
 test_processed_data
 __pycache__
 *.pyc
